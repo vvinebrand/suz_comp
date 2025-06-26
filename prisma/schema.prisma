@@ -1,0 +1,63 @@
+// prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Participant {
+  id          Int      @id @default(autoincrement())
+  lastName    String
+  firstName   String
+  abbrev      String
+  institution String
+  birthYear   Int?
+  gender      String
+  results     Result[]
+}
+
+model Discipline {
+  id        Int    @id @default(autoincrement())
+  key       String @unique   // "стрельба", "силовые_девушки" …
+  label     String
+  columns   String          // JSON-строка: ["№","ФИО",…]
+  unit      String?         // "очки" | "сек" | "повторения"
+  gender    String?         // "girls" | "boys" | null
+  results   Result[]
+}
+
+model Result {
+  id            Int         @id @default(autoincrement())
+  participant   Participant @relation(fields: [participantId], references: [id])
+  participantId Int
+  discipline    Discipline  @relation(fields: [disciplineId], references: [id])
+  disciplineId  Int
+
+  value  String?
+  points Int?
+
+  @@unique([participantId, disciplineId])
+}
+
+/* ---------- VIEW participant_total ---------------------------------- */
+model ParticipantTotal {
+  participantId Int  @id
+  totalPoints   Int
+
+  @@map("participant_total")
+  @@ignore
+}
+
+/* ---------- VIEW team_top3 ------------------------------------------ */
+model TeamTop3 {
+  institution   String @id
+  totalPoints   Int
+  membersCount  Int
+
+  @@map("team_top3")
+  @@ignore
+}
+
