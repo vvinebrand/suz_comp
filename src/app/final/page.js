@@ -65,13 +65,22 @@ export default function FinalPage() {
 
   /* ---------- загрузка данных от API ---------- */
   const [rows,setRows] = useState([]);
-  const load = async ()=>{
-    const qs = new URLSearchParams({ mode:activeTab, gender, scope });
+  // const load = async ()=>{
+  //   const qs = new URLSearchParams({ mode:activeTab, gender, scope });
+  //   const res = await fetch(`/api/final?${qs}`);
+  //   const j   = await res.json();
+  //   setRows(j.rows);
+  // };
+  useEffect(() => {
+  async function fetchRows() {
+    const qs  = new URLSearchParams({ mode:activeTab, gender, scope });
     const res = await fetch(`/api/final?${qs}`);
     const j   = await res.json();
     setRows(j.rows);
-  };
-  useEffect(()=>{ load(); }, [activeTab,gender,scope]);
+  }
+  fetchRows();
+}, [activeTab, gender, scope]);   // ← зависимостей теперь достаточно
+
 
   /* ---------- вспом. функция для thead ---------- */
   const renderHeaderCell = (idx,row=1,col=1)=>(
