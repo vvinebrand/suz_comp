@@ -21,12 +21,11 @@ export async function GET(req) {
   if (mode === "individual") {
     const gLetter = gender === "girls" ? "Ж" : "М";
 
-    const rows = await prisma.$queryRaw`
+    let rows = await prisma.$queryRaw`
       SELECT  p.id,
               p."lastName", p."firstName", p.abbrev,
-              p.institution, p."birthYear",
+              p.institution, p."birthYear", p."isCity",
               SUM(r.points) AS total_points,
-              RANK() OVER (ORDER BY SUM(r.points) DESC) AS place,
               MAX(CASE WHEN d.key='стрельба'       THEN r.value  END) AS vp3_res,
               MAX(CASE WHEN d.key='стрельба'       THEN r.points END) AS vp3_pts,
               MAX(CASE WHEN d.key LIKE 'силовые_%' THEN r.value  END) AS str_res,
@@ -39,6 +38,16 @@ export async function GET(req) {
       WHERE   p.gender = ${gLetter} AND p."isIndividual" = true
       GROUP BY p.id
     `;
+
+    rows = rows.filter(r => {
+      if (scope === 'region') return !r.isCity;
+      if (scope === 'city') return r.isCity;
+      return true;
+    });
+
+    rows = rows
+      .sort((a,b)=>Number(b.total_points||0)-Number(a.total_points||0))
+      .map((r,i)=>({ ...r, place: i+1 }));
 
     return Response.json({ rows: toPlain(rows) });
   }

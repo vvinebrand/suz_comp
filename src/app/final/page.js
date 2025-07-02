@@ -158,7 +158,7 @@ export default function FinalPage() {
           <option value="boys" >Юноши</option>
         </select>
 
-        <select value={scope} disabled={activeTab==="individual"}
+        <select value={scope}
                 onChange={e=>setScope(e.target.value)}
                 className="border px-3 py-1 rounded">
           <option value="region">Область</option>

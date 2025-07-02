@@ -7,6 +7,7 @@ export async function GET(req) {
   const key = req.nextUrl.searchParams.get("key");
   if (!key) return new Response("key required", { status: 400 });
   const mode = req.nextUrl.searchParams.get("mode") ?? "individual";
+  const scope = req.nextUrl.searchParams.get("scope") ?? "all"; // region | city | all
 
   /* 1) сама дисциплина + все результаты */
   const discipline = await prisma.discipline.findUnique({
@@ -22,6 +23,11 @@ export async function GET(req) {
         ? { gender: discipline.gender === "girls" ? "Ж" : "М" }
         : {}),
       ...(mode === "individual" ? { isIndividual: true } : { isTeam: true }),
+      ...(scope === "region"
+        ? { isCity: false }
+        : scope === "city"
+          ? { isCity: true }
+          : {}),
     },
     orderBy: { id: "asc" },
   });
