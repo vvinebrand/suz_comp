@@ -11,19 +11,20 @@ const tabs = [
 
 export default function CompetitionsPage() {
   const [active, setActive]  = useState(tabs[0].key);
+  const [mode,   setMode]    = useState("individual");
   const [columns, setCols]   = useState([]);
   const [rows,    setRows]   = useState([]);
   const [editId,  setEditId] = useState(null);      // id строки, редактируемой сейчас
   const [draft,   setDraft]  = useState({ value:"", points:"" });
 
   /* загрузка */
-  const load = async (key) => {
-    const json = await fetch(`/api/competitions?key=${key}`).then(r=>r.json());
+  const load = async (key, md) => {
+    const json = await fetch(`/api/competitions?key=${key}&mode=${md}`).then(r=>r.json());
     setCols(json.columns);
     setRows(json.rows);
     setEditId(null);
   };
-  useEffect(()=>{ load(active); }, [active]);
+  useEffect(()=>{ load(active, mode); }, [active, mode]);
 
   /* сохранить */
   const saveRow = async (row) => {
@@ -37,12 +38,26 @@ export default function CompetitionsPage() {
         points: draft.points || null,
       }),
     });
-    load(active);
+    load(active, mode);
   };
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Соревнования</h1>
+
+      {/* режим участия */}
+      <div className="flex gap-4 mb-4">
+        {[{key:"individual",label:"Индивидуальный"},
+          {key:"team",label:"Командный"}].map(t=>(
+          <button key={t.key} onClick={()=>setMode(t.key)}
+            className={(mode===t.key
+                      ?"border-blue-600 text-blue-600"
+                      :"border-transparent text-gray-600 hover:text-gray-800")
+                    +" px-4 py-1 border-b-2 font-medium"}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       {/* вкладки */}
       <div className="flex border-b mb-4">

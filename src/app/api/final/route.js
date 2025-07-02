@@ -36,7 +36,7 @@ export async function GET(req) {
       FROM    "Participant" p
       LEFT JOIN "Result"     r ON r."participantId" = p.id
       LEFT JOIN "Discipline" d ON d.id             = r."disciplineId"
-      WHERE   p.gender = ${gLetter}
+      WHERE   p.gender = ${gLetter} AND p."isIndividual" = true
       GROUP BY p.id
     `;
 
@@ -47,16 +47,17 @@ export async function GET(req) {
 
   const members = await prisma.$queryRaw`
     SELECT  p.id, p."lastName", p."firstName",
-            p.abbrev, p.institution, p.gender,
+            p.abbrev, p.institution, p.gender, p."isCity",
             COALESCE(SUM(r.points),0) AS total_points
     FROM    "Participant" p
     LEFT JOIN "Result" r ON r."participantId" = p.id
+    WHERE   p."isTeam" = true
     GROUP BY p.id
   `;
 
   const filt = members.filter(m=>{
-    if (scope==="region") return !m.institution.startsWith('г.');
-    if (scope==="city")   return  m.institution.startsWith('г.');
+    if (scope==="region") return !m.isCity;
+    if (scope==="city")   return  m.isCity;
     return true;          // all
   });
 

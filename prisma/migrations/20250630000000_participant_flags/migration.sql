@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Participant" 
+  ADD COLUMN "isIndividual" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN "isTeam" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN "isCity" BOOLEAN NOT NULL DEFAULT false;

@@ -14,11 +14,14 @@ export default function ParticipantsForm({ onAdded }) {
     institution: "",
     birthYear:   "",
     gender:      "Ж",
+    isIndividual: true,
+    isTeam:       true,
+    isCity:       false,
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    const { name, type, checked, value } = e.target;
+    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleSubmit = async (e) => {
@@ -34,6 +37,7 @@ export default function ParticipantsForm({ onAdded }) {
     setForm({
       lastName: "", firstName: "", abbrev: "",
       institution: "", birthYear: "", gender: "Ж",
+      isIndividual: true, isTeam: true, isCity: false,
     });
     onAdded();
   };
@@ -96,6 +100,34 @@ export default function ParticipantsForm({ onAdded }) {
         <option>Ж</option>
         <option>М</option>
       </select>
+
+      {/* Участие */}
+      <div className="col-span-full flex gap-4">
+        <label className="flex items-center gap-1">
+          <input type="checkbox" name="isIndividual"
+                 checked={form.isIndividual} onChange={handleChange} />
+          Индивид.
+        </label>
+        <label className="flex items-center gap-1">
+          <input type="checkbox" name="isTeam"
+                 checked={form.isTeam} onChange={handleChange} />
+          Командн.
+        </label>
+      </div>
+
+      {/* Область / Город */}
+      <div className="col-span-full flex gap-4">
+        <label className="flex items-center gap-1">
+          <input type="checkbox" checked={!form.isCity}
+                 onChange={()=>setForm(f=>({...f,isCity:false}))} />
+          Область
+        </label>
+        <label className="flex items-center gap-1">
+          <input type="checkbox" checked={form.isCity}
+                 onChange={()=>setForm(f=>({...f,isCity:true}))} />
+          Город
+        </label>
+      </div>
 
       {/* Кнопка */}
       <button
