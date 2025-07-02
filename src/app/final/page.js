@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import dayjs from "dayjs";
 
 /* ---------- заголовки без изменений ---------- */
 const initialCols = {
@@ -26,6 +27,7 @@ const initialCols = {
 };
 
 export default function FinalPage() {
+  const [eventDate, setEventDate] = useState(dayjs().format("YYYY-MM-DD"));
   /* вкладки / фильтры ------------------------------------------------ */
   const [activeTab, setActiveTab] = useState("individual"); // individual | team
   const [gender,    setGender   ] = useState("girls");      // girls | boys
@@ -38,7 +40,7 @@ export default function FinalPage() {
   const [colsRegion, setColsRegion] = useState(initialCols.region);
   const [colsCity,   setColsCity  ] = useState(initialCols.city);
 
-  const originalRef = useRef({});          // для Cancel
+  const originalRef = useRef({});
 
   const startEdit  = () => {
     originalRef.current = { girls:colsGirls, boys:colsBoys,
@@ -61,7 +63,7 @@ export default function FinalPage() {
   const currentCols =
     activeTab==="individual"
       ? (gender==="girls"?colsGirls:colsBoys)
-      : (scope==="region"?colsRegion:scope==="city"?colsCity:colsRegion); // all → region шаблон
+      : (scope==="region"?colsRegion:scope==="city"?colsCity:colsRegion);
 
   /* ---------- загрузка данных от API ---------- */
   const [rows,setRows] = useState([]);
@@ -71,6 +73,30 @@ export default function FinalPage() {
   //   const j   = await res.json();
   //   setRows(j.rows);
   // };
+  async function downloadPdf() {
+  const body = {
+    mode : activeTab,
+    gender,
+    scope,
+    date : eventDate,
+    allTabs : false
+  };
+
+  const res  = await fetch("/api/final/pdf", {
+    method : "POST",
+    headers: { "Content-Type":"application/json" },
+    body   : JSON.stringify(body)
+  });
+  if (!res.ok) { alert("Ошибка PDF"); return; }
+
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url;
+  a.download = "itogi.pdf";
+  a.click();
+  URL.revokeObjectURL(url);
+}
   useEffect(() => {
   async function fetchRows() {
     const qs  = new URLSearchParams({ mode:activeTab, gender, scope });
@@ -79,7 +105,7 @@ export default function FinalPage() {
     setRows(j.rows);
   }
   fetchRows();
-}, [activeTab, gender, scope]);   // ← зависимостей теперь достаточно
+}, [activeTab, gender, scope]);
 
 
   /* ---------- вспом. функция для thead ---------- */
@@ -159,13 +185,28 @@ export default function FinalPage() {
               </button>
             </>
         }
+        {/* выбор даты */}
+        <label className="flex items-center gap-2 text-sm">
+          Дата:&nbsp;
+          <input
+            type="date"
+            value={eventDate}
+            onChange={(e)=>setEventDate(e.target.value)}
+            className="border px-2 py-1 rounded text-sm"
+          />
+        </label>
+        <button
+          onClick={downloadPdf}
+          className="px-3 py-1 bg-blue-400 hover:bg-blue-500 text-white rounded"
+        >
+          Скачать PDF
+        </button>
       </div>
 
       {/* -------------------- ТАБЛИЦА -------------------- */}
       <div className="overflow-x-auto bg-white shadow rounded">
         <table className="min-w-full text-sm text-gray-700 border-collapse rounded-md overflow-hidden shadow-sm">
           <thead className="bg-gray-100 text-xs text-gray-500 uppercase">
-            {/* --- первая строка заголовка --- */}
             <tr>
               {renderHeaderCell(0,2)}
               {renderHeaderCell(1,2)}
@@ -178,7 +219,6 @@ export default function FinalPage() {
               {activeTab==="team" && renderHeaderCell(14,2)}  {/* Сумма топ-3 */}
               {renderHeaderCell(activeTab==="team"?15:14,2)}  {/* место */}
             </tr>
-            {/* --- подписи под ВП-3 / Силовая / Лыжи --- */}
             <tr>
               {renderHeaderCell(5)}
               {renderHeaderCell(6)}

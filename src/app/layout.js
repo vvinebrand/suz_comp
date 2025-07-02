@@ -55,12 +55,6 @@ export default function RootLayout({ children }) {
               >
                 Соревнования
               </Link>
-              {/* <Link
-                href="/results"
-                className="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded"
-              >
-                Результаты
-              </Link> */}
               <Link
                 href="/final"
                 className="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded"

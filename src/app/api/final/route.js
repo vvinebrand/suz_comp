@@ -45,7 +45,6 @@ export async function GET(req) {
 
   /* ---------- TEAM ---------- */
 
-  /* 1. участники с суммами очков */
   const members = await prisma.$queryRaw`
     SELECT  p.id, p."lastName", p."firstName",
             p.abbrev, p.institution, p.gender,
@@ -55,21 +54,18 @@ export async function GET(req) {
     GROUP BY p.id
   `;
 
-  /* 2. фильтр область / город / all */
   const filt = members.filter(m=>{
     if (scope==="region") return !m.institution.startsWith('г.');
     if (scope==="city")   return  m.institution.startsWith('г.');
     return true;          // all
   });
 
-  /* 3. группировка по СУЗ */
   const buckets = new Map();
   for (const m of filt) {
     if (!buckets.has(m.institution)) buckets.set(m.institution, []);
     buckets.get(m.institution).push(m);
   }
 
-  /* 4. считаем сумму 3-х лучших */
   let teams = Array.from(buckets.entries()).map(([inst, list])=>{
     const sorted  = list.sort((a,b)=>b.total_points-a.total_points);
     const top3sum = sorted.slice(0,3)
@@ -78,12 +74,11 @@ export async function GET(req) {
       institution : inst,
       membersCount: list.length,
       total_points: top3sum,
-      team_sum3   : top3sum,     // для фронта
+      team_sum3   : top3sum,
       participants: sorted,
     };
   });
 
-  /* 5. ранжируем */
   teams = teams.sort((a,b)=>b.total_points-a.total_points)
                .map((t,i)=>({ ...t, place:i+1 }));
 
