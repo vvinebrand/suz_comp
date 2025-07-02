@@ -1,25 +1,52 @@
 import { prisma } from "@/lib/prisma";
 
+/* ---------- BigInt → Number ---------- */
+function toPlain(v) {
+  if (Array.isArray(v)) return v.map(toPlain);
+  if (v && typeof v === "object")
+    return Object.fromEntries(
+      Object.entries(v).map(([k, val]) => [k, toPlain(val)])
+    );
+  return typeof v === "bigint" ? Number(v) : v;
+}
+
 export async function GET(req) {
-  const by = req.nextUrl.searchParams.get("by") || "region"; // or "city"
-  // группируем по institution
-  const agg = await prisma.participant.groupBy({
-    by: ["institution"],
-    _sum: { totalPoints: true },
-    _count: { id: true },
-  });
-  // сортируем по убыванию суммы
-  agg.sort((a, b) => b._sum.totalPoints - a._sum.totalPoints);
+  const scope = req.nextUrl.searchParams.get("scope") ?? "region"; // region | city | all
 
-  // добавляем место
-  const result = agg.map((item, idx) => ({
-    institution: item.institution,
-    participantsCount: item._count.id,
-    totalPoints: item._sum.totalPoints,
-    place: idx + 1,
-  }));
+  const members = await prisma.$queryRaw`
+    SELECT  p.id,
+            p.institution,
+            COALESCE(SUM(r.points),0) AS total_points
+    FROM    "Participant" p
+    LEFT JOIN "Result" r ON r."participantId" = p.id
+    GROUP BY p.id
+  `;
 
-  return new Response(JSON.stringify(result), {
-    headers: { "Content-Type": "application/json" },
+  const filt = members.filter((m) => {
+    if (scope === "region") return !m.institution.startsWith('г.');
+    if (scope === "city") return m.institution.startsWith('г.');
+    return true;
   });
+
+  const buckets = new Map();
+  for (const m of filt) {
+    if (!buckets.has(m.institution)) buckets.set(m.institution, []);
+    buckets.get(m.institution).push(Number(m.total_points || 0));
+  }
+
+  let teams = Array.from(buckets.entries()).map(([inst, list]) => {
+    const sorted = list.sort((a, b) => b - a);
+    const top3sum = sorted.slice(0, 3).reduce((s, x) => s + x, 0);
+    return {
+      institution: inst,
+      membersCount: list.length,
+      total_points: top3sum,
+    };
+  });
+
+  teams = teams
+    .sort((a, b) => b.total_points - a.total_points)
+    .map((t, i) => ({ ...t, place: i + 1 }));
+
+  return Response.json({ rows: toPlain(teams) });
 }
