@@ -18,6 +18,9 @@ export async function POST(req) {
       institution: p.institution,
       birthYear:   p.birthYear ? Number(p.birthYear) : null,
       gender:      p.gender,
+      isIndividual: p.isIndividual ?? true,
+      isTeam:       p.isTeam       ?? true,
+      isCity:       p.isCity       ?? false,
     },
   });
   return Response.json(created, { status: 201 });

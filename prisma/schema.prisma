@@ -16,6 +16,9 @@ model Participant {
   institution String
   birthYear   Int?
   gender      String
+  isIndividual Boolean @default(true)
+  isTeam       Boolean @default(true)
+  isCity       Boolean @default(false)
   results     Result[]
 }
 

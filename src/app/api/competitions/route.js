@@ -6,6 +6,7 @@ export async function GET(req) {
   /* 0) ключ дисциплины из query */
   const key = req.nextUrl.searchParams.get("key");
   if (!key) return new Response("key required", { status: 400 });
+  const mode = req.nextUrl.searchParams.get("mode") ?? "individual";
 
   /* 1) сама дисциплина + все результаты */
   const discipline = await prisma.discipline.findUnique({
@@ -16,9 +17,12 @@ export async function GET(req) {
 
   /* 2) базовый список участников c учётом пола дисциплины */
   let participants = await prisma.participant.findMany({
-    where: discipline.gender
-      ? { gender: discipline.gender === "girls" ? "Ж" : "М" }
-      : {},
+    where: {
+      ...(discipline.gender
+        ? { gender: discipline.gender === "girls" ? "Ж" : "М" }
+        : {}),
+      ...(mode === "individual" ? { isIndividual: true } : { isTeam: true }),
+    },
     orderBy: { id: "asc" },
   });
 

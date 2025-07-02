@@ -45,7 +45,7 @@ export default function ParticipantsTable({ reloadFlag, onReload }) {
         <table className="min-w-full text-sm text-gray-700 border-collapse rounded-md overflow-hidden shadow-sm">
           <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
             <tr>
-              {["№","Фамилия","Имя","СУЗ","Год","Пол",""].map(h=>(
+              {["№","Фамилия","Имя","СУЗ","Год","Пол","Инд","Ком","Город",""].map(h=>(
                 <th key={h}
                     className="px-3 py-2 font-medium border border-gray-200 bg-gray-100 whitespace-nowrap">
                   {h}
@@ -62,6 +62,9 @@ export default function ParticipantsTable({ reloadFlag, onReload }) {
                 <td className="px-3 py-2 border border-gray-100 whitespace-nowrap">{p.abbrev}</td>
                 <td className="px-3 py-2 border border-gray-100 whitespace-nowrap">{p.birthYear}</td>
                 <td className="px-3 py-2 border border-gray-100 whitespace-nowrap">{p.gender}</td>
+                <td className="px-3 py-2 border border-gray-100 whitespace-nowrap text-center">{p.isIndividual ? '✓' : ''}</td>
+                <td className="px-3 py-2 border border-gray-100 whitespace-nowrap text-center">{p.isTeam ? '✓' : ''}</td>
+                <td className="px-3 py-2 border border-gray-100 whitespace-nowrap text-center">{p.isCity ? 'г' : 'обл'}</td>
                 <td className="px-3 py-2 border border-gray-100 whitespace-nowrap space-x-2">
                   <button onClick={()=>openEdit(p)}  className="text-blue-600">✏️</button>
                   <button onClick={()=>remove(p.id)} className="text-red-600">🗑️</button>
@@ -70,7 +73,7 @@ export default function ParticipantsTable({ reloadFlag, onReload }) {
             ))}
             {data.length===0 && (
               <tr>
-                <td colSpan={8} className="px-6 py-6 text-center text-gray-500">
+                <td colSpan={10} className="px-6 py-6 text-center text-gray-500">
                   Нет данных
                 </td>
               </tr>
@@ -96,6 +99,32 @@ export default function ParticipantsTable({ reloadFlag, onReload }) {
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none"
               />
             ))}
+
+            {/* чекбоксы */}
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" name="isIndividual"
+                     checked={editForm.isIndividual || false}
+                     onChange={e=>setEditForm(f=>({...f,isIndividual:e.target.checked}))}/>
+              Индивид.
+            </label>
+            <label className="inline-flex items-center gap-2 ml-4">
+              <input type="checkbox" name="isTeam"
+                     checked={editForm.isTeam || false}
+                     onChange={e=>setEditForm(f=>({...f,isTeam:e.target.checked}))}/>
+              Командн.
+            </label>
+            <div className="flex gap-4 mt-2">
+              <label className="inline-flex items-center gap-1">
+                <input type="checkbox" checked={!editForm.isCity}
+                       onChange={()=>setEditForm(f=>({...f,isCity:false}))}/>
+                Область
+              </label>
+              <label className="inline-flex items-center gap-1">
+                <input type="checkbox" checked={editForm.isCity}
+                       onChange={()=>setEditForm(f=>({...f,isCity:true}))}/>
+                Город
+              </label>
+            </div>
 
             <div className="flex justify-end space-x-2">
               <button onClick={()=>setEditRow(null)}
