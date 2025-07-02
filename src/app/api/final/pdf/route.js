@@ -132,16 +132,40 @@ function buildPdf({ caption, date, rows }) {
 // ──────────────────────────────────────────────────────────
 
 export async function POST(req) {
+
+  let body = {};
+  try {
+    body = await req.json();
+  } catch {
+  }
+
   const {
-    mode   = "individual",          // individual | team
-    gender = "girls",               // girls | boys
-    scope  = "region",              // region | city | all
+    mode   = "individual",            // individual | team
+    gender = "girls",                 // girls | boys
+    scope  = "region",                // region | city | all
     date   = dayjs().format("YYYY-MM-DD"),
-  } = await req.json();
+  } = body;
 
   const qs   = new URLSearchParams({ mode, gender, scope }).toString();
   const resp = await fetch(`${req.nextUrl.origin}/api/final?${qs}`);
-  const { rows } = await resp.json();
+
+  if (!resp.ok) {
+    return NextResponse.json(
+      { error: `final route responded ${resp.status}` },
+      { status: 502 },
+    );
+  }
+
+  let rows = [];
+  try {
+    const data = await resp.json();
+    rows = data.rows ?? [];
+  } catch {
+    return NextResponse.json(
+      { error: "final route returned non-JSON" },
+      { status: 502 },
+    );
+  }
 
   const doc = buildPdf({
     caption : mode === "individual" ? "Индивидуальный зачёт"
@@ -149,14 +173,14 @@ export async function POST(req) {
     date    : dayjs(date).format("DD.MM.YYYY"),
     rows,
   });
+
   const buffer = await pdf(doc).toBuffer();
 
   const safeDate = dayjs(date).format("YYYY-MM-DD");
   const filename = `itogi_${safeDate}.pdf`;
 
   const headers = new Headers({
-    "content-type":
-      "application/pdf",
+    "content-type"       : "application/pdf",
     "content-disposition":
       `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
   });
