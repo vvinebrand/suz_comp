@@ -12,19 +12,20 @@ const tabs = [
 export default function CompetitionsPage() {
   const [active, setActive]  = useState(tabs[0].key);
   const [mode,   setMode]    = useState("individual");
+  const [scope,  setScope]   = useState("all"); // region | city | all
   const [columns, setCols]   = useState([]);
   const [rows,    setRows]   = useState([]);
   const [editId,  setEditId] = useState(null);      // id строки, редактируемой сейчас
   const [draft,   setDraft]  = useState({ value:"", points:"" });
 
   /* загрузка */
-  const load = async (key, md) => {
-    const json = await fetch(`/api/competitions?key=${key}&mode=${md}`).then(r=>r.json());
+  const load = async (key, md, sc) => {
+    const json = await fetch(`/api/competitions?key=${key}&mode=${md}&scope=${sc}`).then(r=>r.json());
     setCols(json.columns);
     setRows(json.rows);
     setEditId(null);
   };
-  useEffect(()=>{ load(active, mode); }, [active, mode]);
+  useEffect(()=>{ load(active, mode, scope); }, [active, mode, scope]);
 
   /* сохранить */
   const saveRow = async (row) => {
@@ -38,7 +39,7 @@ export default function CompetitionsPage() {
         points: draft.points || null,
       }),
     });
-    load(active, mode);
+    load(active, mode, scope);
   };
 
   return (
@@ -57,6 +58,13 @@ export default function CompetitionsPage() {
             {t.label}
           </button>
         ))}
+
+        <select value={scope} onChange={e=>setScope(e.target.value)}
+                className="border px-3 py-1 rounded ml-4">
+          <option value="region">Область</option>
+          <option value="city">Город</option>
+          <option value="all">Все</option>
+        </select>
       </div>
 
       {/* вкладки */}
