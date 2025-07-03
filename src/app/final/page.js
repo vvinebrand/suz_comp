@@ -208,24 +208,29 @@ export default function FinalPage() {
         <table className="min-w-full text-sm text-gray-700 border-collapse rounded-md overflow-hidden shadow-sm">
           <thead className="bg-gray-100 text-xs text-gray-500 uppercase">
             <tr>
-              {renderHeaderCell(0,2)}
-              {renderHeaderCell(1,2)}
-              {renderHeaderCell(2,2)}
-              {renderHeaderCell(3,2)}
-              {renderHeaderCell(4,1,2)}  {/* ВП-3 colspan 2 */}
-              {renderHeaderCell(7,1,2)}  {/* Силовая */}
-              {renderHeaderCell(10,1,2)} {/* Лыжи */}
-              {renderHeaderCell(13,2)}   {/* Сумма очков */}
-              {activeTab==="team" && renderHeaderCell(14,2)}  {/* Сумма топ-3 */}
-              {renderHeaderCell(activeTab==="team"?15:14,2)}  {/* место */}
+              {[
+                renderHeaderCell(0, 2),
+                renderHeaderCell(1, 2),
+                renderHeaderCell(2, 2),
+                renderHeaderCell(3, 2),
+                renderHeaderCell(4, 1, 2),           // ВП-3
+                renderHeaderCell(7, 1, 2),           // Силовая
+                renderHeaderCell(10, 1, 2),          // Лыжи
+                renderHeaderCell(13, 2),             // Сумма очков
+                activeTab === "team" && renderHeaderCell(14, 2),   // СО 3-х
+                renderHeaderCell(activeTab === "team" ? 15 : 14, 2) // место
+              ].filter(Boolean)}
             </tr>
+
             <tr>
-              {renderHeaderCell(5)}
-              {renderHeaderCell(6)}
-              {renderHeaderCell(8)}
-              {renderHeaderCell(9)}
-              {renderHeaderCell(11)}
-              {renderHeaderCell(12)}
+              {[
+                renderHeaderCell(5),
+                renderHeaderCell(6),
+                renderHeaderCell(8),
+                renderHeaderCell(9),
+                renderHeaderCell(11),
+                renderHeaderCell(12)
+              ]}
             </tr>
           </thead>
 
@@ -244,7 +249,7 @@ export default function FinalPage() {
                           {team.institution}
                         </td>
                       </tr>
-                      {team.participants.map((p, i) => (
+                      {(team.participants ?? []).map((p, i) => (
                         <tr key={p.id}>
                           <td className="px-3 py-2 border border-gray-100">{++idx}</td>
                           <td className="px-3 py-2 border border-gray-100">
