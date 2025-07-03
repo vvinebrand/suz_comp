@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, Fragment } from "react";
+import { useState, useRef, useEffect, useMemo, Fragment } from "react";
 import dayjs from "dayjs";
 
 /* ---------- заголовки без изменений ---------- */
@@ -113,6 +113,34 @@ export default function FinalPage() {
       setGender("all");
     }
   }, [activeTab, scope]);
+
+  const displayRows = useMemo(() => {
+    if (activeTab !== "team") return rows;
+    const map = new Map();
+    for (const team of rows) {
+      const key = team.institution;
+      if (!map.has(key)) {
+        map.set(key, { ...team, participants: [...(team.participants ?? [])] });
+      } else {
+        const cur = map.get(key);
+        cur.participants = [
+          ...cur.participants,
+          ...(team.participants ?? [])
+        ];
+        const curSum = Number(cur.team_sum3 ?? 0);
+        const nextSum = Number(team.team_sum3 ?? 0);
+        if (nextSum > curSum) {
+          cur.team_sum3 = team.team_sum3;
+          cur.place = team.place;
+        }
+      }
+    }
+    return Array.from(map.values()).filter(
+      (t) => (t.participants ?? []).length > 0
+    );
+  }, [rows, activeTab]);
+
+  const rowsToShow = activeTab === "team" ? displayRows : rows;
 
 
   /* ---------- вспом. функция для thead ---------- */
@@ -244,11 +272,11 @@ export default function FinalPage() {
           </thead>
 
           <tbody>
-            {rows.length > 0 ? (
+            {rowsToShow.length > 0 ? (
               activeTab === "team" ? (
                 (() => {
                   let idx = 0;
-                  return rows.map((team) => (
+                  return rowsToShow.map((team) => (
                     <Fragment key={team.institution}>
                       <tr>
                         <td
@@ -291,7 +319,7 @@ export default function FinalPage() {
                   ));
                 })()
               ) : (
-                rows.map((r, i) => (
+                rowsToShow.map((r, i) => (
                   <tr key={i}>
                     <td className="px-3 py-2 border border-gray-100">{i + 1}</td>
                     <td className="px-3 py-2 border border-gray-100">
