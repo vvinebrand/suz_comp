@@ -18,9 +18,14 @@ export async function GET(req) {
   const scope   = p.get("scope")  ?? "region";      // region | city | all
 
   /* girls → "Ж", boys → "М", all → null (нет фильтра) */
-  const gLetter = gender === "girls" ? "Ж"
+  let gLetter = gender === "girls" ? "Ж"
                 : gender === "boys"  ? "М"
                 : null;
+
+  // В командном зачёте областного уровня учитываются участники обоих полов
+  if (mode === "team" && scope === "region") {
+    gLetter = null;
+  }
 
   /* ───────────────────── INDIVIDUAL ───────────────────── */
   if (mode === "individual") {

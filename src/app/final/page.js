@@ -98,14 +98,21 @@ export default function FinalPage() {
   URL.revokeObjectURL(url);
 }
   useEffect(() => {
-  async function fetchRows() {
-    const qs  = new URLSearchParams({ mode:activeTab, gender, scope });
-    const res = await fetch(`/api/final?${qs}`);
-    const j   = await res.json();
-    setRows(j.rows);
-  }
-  fetchRows();
-}, [activeTab, gender, scope]);
+    async function fetchRows() {
+      const qs  = new URLSearchParams({ mode:activeTab, gender, scope });
+      const res = await fetch(`/api/final?${qs}`);
+      const j   = await res.json();
+      setRows(j.rows);
+    }
+    fetchRows();
+  }, [activeTab, gender, scope]);
+
+  // Командные областные результаты формируются без разделения по полу.
+  useEffect(() => {
+    if (activeTab === "team" && scope === "region" && gender !== "all") {
+      setGender("all");
+    }
+  }, [activeTab, scope]);
 
 
   /* ---------- вспом. функция для thead ---------- */
@@ -151,7 +158,8 @@ export default function FinalPage() {
 
       {/* селекторы пола и охвата */}
       <div className="flex gap-4 mb-4">
-        <select value={gender} disabled={false /* всегда доступен */}
+        <select value={gender}
+                disabled={activeTab === "team" && scope === "region"}
                 onChange={e=>setGender(e.target.value)}
                 className="border px-3 py-1 rounded">
           <option value="girls">Девушки</option>
