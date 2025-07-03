@@ -8,17 +8,17 @@ function mergeTeams(rows = []) {
   const map = new Map();
 
   rows.forEach(team => {
-    const key = team.institution.trim().toLowerCase();   // нормализуем
-    const pts = team.team_sum3 ?? -Infinity;
+    const key = team.institution.trim().toLowerCase();
+    const parts = team.participants ?? [];
 
-    if (!team.participants?.length) return;              // пропускаем пустых
+    if (!parts.length) return;                        // пропускаем пустых
 
     if (!map.has(key)) {
-      map.set(key, { ...team, participants:[...(team.participants ?? [])] });
+      map.set(key, { ...team, participants: [...parts] });
     } else {
       const tgt = map.get(key);
-      tgt.participants.push(...team.participants);
-      if (pts > (tgt.team_sum3 ?? -Infinity)) {
+      tgt.participants.push(...parts);                // сливаем участников
+      if ((team.team_sum3 ?? -Infinity) > (tgt.team_sum3 ?? -Infinity)) {
         tgt.team_sum3 = team.team_sum3;
         tgt.place     = team.place;
       }
@@ -26,26 +26,21 @@ function mergeTeams(rows = []) {
   });
 
   return Array.from(map.values())
-    .sort((a, b) => (a.place ?? 1e9) - (b.place ?? 1e9));
+              .sort((a, b) => (a.place ?? 1e9) - (b.place ?? 1e9));
 }
 
 /* ───────── заголовки ───────── */
 const initialCols = {
   girls : ["№ п/п","Фамилия, Имя","СУЗ","Год",
            "ВП-3","очки","рез.","Силовая","рез.","очки",
-           "Лыжная гонка 2 км","рез","очки",
-           "Сумма очков","место"],
-
+           "Лыжная гонка 2 км","рез","очки","Сумма очков","место"],
   boys  : ["№ п/п","Фамилия, Имя","СУЗ","Год",
            "ВП-3","очки","рез.","Силовая","рез","очки",
-           "Лыжная гонка 3 км","рез","очки",
-           "Сумма очков","место"],
-
+           "Лыжная гонка 3 км","рез","очки","Сумма очков","место"],
   region: ["№ п/п","Фамилия, Имя","СУЗ","Год",
            "ВП-3","очки","рез.","Силовая","рез","очки",
            "Лыжная гонка 2км","рез","очки",
            "Сумма очков","СО 3х уч.","место"],
-
   city  : ["№ п/п","Фамилия, Имя","СУЗ","Год",
            "ВП-3","очки","рез.","Силовая","рез","очки",
            "Лыжная гонка 2км","рез","очки",
@@ -68,33 +63,40 @@ export default function FinalPage() {
   const [isEditing,  setIsEditing ] = useState(false);
   const originalRef  = useRef({});
 
-  /* выбор текущих заголовков */
   const currentCols =
     activeTab==="individual"
       ? (gender==="girls"?colsGirls:colsBoys)
       : (scope==="region"?colsRegion:scope==="city"?colsCity:colsRegion);
 
   /* данные */
-  const [rows,setRows] = useState([]);
+  const [rows, setRows] = useState([]);
 
   useEffect(() => {
-    async function fetchRows() {
+    let cancelled = false;
+    setRows([]);                                       // очищаем «старое»
+
+    (async () => {
       const qs  = new URLSearchParams({ mode:activeTab, gender, scope });
       const res = await fetch(`/api/final?${qs}`);
       const j   = await res.json();
-      setRows(activeTab==="team" ? mergeTeams(j.rows) : j.rows);
-    }
-    fetchRows();
+      if (!cancelled) {
+        setRows(
+          activeTab === "team" ? mergeTeams(j.rows) : j.rows
+        );
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [activeTab, gender, scope]);
 
-  /* автоматический switch на all */
+  /* авто-switch на "all" для команд-области */
   useEffect(() => {
     if (activeTab==="team" && scope==="region" && gender!=="all") {
       setGender("all");
     }
   }, [activeTab, scope]);
 
-  /* helper для ячеек thead */
+  /* helper thead cell */
   const renderHeaderCell = (idx,row=1,col=1)=>( /* без изменений */
     <th key={idx} rowSpan={row} colSpan={col}
         className="px-3 py-2 font-medium border border-gray-200 bg-gray-100 whitespace-nowrap">
@@ -115,7 +117,6 @@ export default function FinalPage() {
     </th>
   );
 
-  /* ---------- UI ---------- */
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Итоги</h1>
@@ -155,22 +156,25 @@ export default function FinalPage() {
 
       {/* таблица */}
       <div className="overflow-x-auto bg-white shadow rounded">
-        <table className="min-w-full text-sm text-gray-700 border-collapse rounded-md overflow-hidden shadow-sm">
+        <table
+          key={`${activeTab}-${gender}-${scope}`}              /* сброс DOM */
+          className="min-w-full text-sm text-gray-700 border-collapse rounded-md overflow-hidden shadow-sm">
+
+          {/* ---- THEAD ---- */}
           <thead className="bg-gray-100 text-xs text-gray-500 uppercase">
             <tr>
-              {[ renderHeaderCell(0,2), renderHeaderCell(1,2), renderHeaderCell(2,2),
-                 renderHeaderCell(3,2), renderHeaderCell(4,1,2),
-                 renderHeaderCell(7,1,2), renderHeaderCell(10,1,2),
-                 renderHeaderCell(13,2),
+              {[ renderHeaderCell(0,2), renderHeaderCell(1,2),
+                 renderHeaderCell(2,2), renderHeaderCell(3,2),
+                 renderHeaderCell(4,1,2), renderHeaderCell(7,1,2),
+                 renderHeaderCell(10,1,2), renderHeaderCell(13,2),
                  activeTab==="team" && renderHeaderCell(14,2),
                  renderHeaderCell(activeTab==="team"?15:14,2)
               ].filter(Boolean)}
             </tr>
-            <tr>
-              {[5,6,8,9,11,12].map(i=>renderHeaderCell(i))}
-            </tr>
+            <tr>{[5,6,8,9,11,12].map(i=>renderHeaderCell(i))}</tr>
           </thead>
 
+          {/* ---- TBODY ---- */}
           <tbody>
             {rows.length ? (
               activeTab==="team" ? (() => {
