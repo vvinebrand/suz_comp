@@ -14,7 +14,7 @@ function mergeTeams(rows = []) {
     if (!team.participants?.length) return;              // пропускаем пустых
 
     if (!map.has(key)) {
-      map.set(key, { ...team, participants:[...team.participants] });
+      map.set(key, { ...team, participants:[...(team.participants ?? [])] });
     } else {
       const tgt = map.get(key);
       tgt.participants.push(...team.participants);
@@ -184,7 +184,7 @@ export default function FinalPage() {
                       </td>
                     </tr>
 
-                    {team.participants.map((p,i)=>(
+                    {(team.participants ?? []).map((p,i)=>(
                       <tr key={p.id}>
                         <td className="px-3 py-2 border border-gray-100">{++idx}</td>
                         <td className="px-3 py-2 border border-gray-100">{p.lastName} {p.firstName}</td>
