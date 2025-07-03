@@ -14,8 +14,9 @@ function toPlain(v) {
 export async function GET(req) {
   const p       = req.nextUrl.searchParams;
   const mode    = p.get("mode")   ?? "individual";   // individual | team
-  const gender  = p.get("gender") ?? "girls";        // girls | boys
+  const gender  = p.get("gender") ?? "girls";        // girls | boys | all
   const scope   = p.get("scope")  ?? "region";       // region | city | all
+  const gLetter = gender === "girls" ? "Ж" : gender === "boys"  ? "М" : null;
 
   /* ---------- INDIVIDUAL ---------- */
   if (mode === "individual") {
@@ -35,7 +36,8 @@ export async function GET(req) {
       FROM    "Participant" p
       LEFT JOIN "Result"     r ON r."participantId" = p.id
       LEFT JOIN "Discipline" d ON d.id             = r."disciplineId"
-      WHERE   p.gender = ${gLetter} AND p."isIndividual" = true
+      WHERE   p."isIndividual" = true
+          ${gLetter && prisma.sql`AND p.gender = ${gLetter}`}
       GROUP BY p.id
     `;
 
@@ -54,8 +56,6 @@ export async function GET(req) {
 
 /* ---------- TEAM ---------- */
 
-const gLetter = gender === "girls" ? "Ж" : "М";
-
 const members = await prisma.$queryRaw`
   SELECT  p.id, p."lastName", p."firstName",
           p.abbrev, p.institution, p.gender, p."isCity",
@@ -63,7 +63,7 @@ const members = await prisma.$queryRaw`
   FROM    "Participant" p
   LEFT JOIN "Result" r ON r."participantId" = p.id
   WHERE   p."isTeam" = true
-    AND p.gender = ${gLetter}
+    ${gLetter && prisma.sql`AND p.gender = ${gLetter}`}
   GROUP BY p.id
 `;
 

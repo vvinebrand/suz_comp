@@ -151,11 +151,12 @@ export default function FinalPage() {
 
       {/* селекторы пола и охвата */}
       <div className="flex gap-4 mb-4">
-        <select value={gender} disabled={activeTab==="team"}
+        <select value={gender} disabled={false /* всегда доступен */}
                 onChange={e=>setGender(e.target.value)}
                 className="border px-3 py-1 rounded">
           <option value="girls">Девушки</option>
           <option value="boys" >Юноши</option>
+          <option value="all"  >Общее</option>
         </select>
 
         <select value={scope}
