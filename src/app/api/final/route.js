@@ -1,5 +1,6 @@
 // src/app/api/final/route.js
 import { prisma } from "@/lib/prisma";
+import { sql } from "@prisma/client";
 
 /* --- BigInt → Number (для JSON) ---------------------------------- */
 function toPlain(v) {
@@ -18,9 +19,14 @@ export async function GET(req) {
   const scope   = p.get("scope")  ?? "region";      // region | city | all
 
   /* girls → "Ж", boys → "М", all → null (нет фильтра) */
-  const gLetter = gender === "girls" ? "Ж"
+  let gLetter = gender === "girls" ? "Ж"
                 : gender === "boys"  ? "М"
                 : null;
+
+  // В командном зачёте областного уровня учитываются участники обоих полов
+  if (mode === "team" && scope === "region") {
+    gLetter = null;
+  }
 
   /* ───────────────────── INDIVIDUAL ───────────────────── */
   if (mode === "individual") {
@@ -40,7 +46,7 @@ export async function GET(req) {
       LEFT JOIN "Result"     r ON r."participantId" = p.id
       LEFT JOIN "Discipline" d ON d.id             = r."disciplineId"
       WHERE   p."isIndividual" = true
-        ${gLetter ? prisma.sql`AND p.gender = ${gLetter}` : prisma.sql``}
+        ${gLetter ? sql`AND p.gender = ${gLetter}` : sql``}
       GROUP BY p.id
     `;
 
@@ -69,7 +75,7 @@ export async function GET(req) {
     FROM    "Participant" p
     LEFT JOIN "Result" r ON r."participantId" = p.id
     WHERE   p."isTeam" = true
-      ${gLetter ? prisma.sql`AND p.gender = ${gLetter}` : prisma.sql``}
+      ${gLetter ? sql`AND p.gender = ${gLetter}` : sql``}
     GROUP BY p.id
   `;
 
