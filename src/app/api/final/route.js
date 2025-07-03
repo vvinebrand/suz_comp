@@ -54,6 +54,8 @@ export async function GET(req) {
 
 /* ---------- TEAM ---------- */
 
+const gLetter = gender === "girls" ? "Ж" : "М";
+
 const members = await prisma.$queryRaw`
   SELECT  p.id, p."lastName", p."firstName",
           p.abbrev, p.institution, p.gender, p."isCity",
@@ -61,6 +63,7 @@ const members = await prisma.$queryRaw`
   FROM    "Participant" p
   LEFT JOIN "Result" r ON r."participantId" = p.id
   WHERE   p."isTeam" = true
+    AND p.gender = ${gLetter}
   GROUP BY p.id
 `;
 
