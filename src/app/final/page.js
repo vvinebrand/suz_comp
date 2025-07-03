@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Fragment } from "react";
 import dayjs from "dayjs";
 
 /* ---------- заголовки без изменений ---------- */
@@ -230,35 +230,86 @@ export default function FinalPage() {
           </thead>
 
           <tbody>
-            {rows.length>0 ? rows.map((r,i)=>(
-              <tr key={i}>
-                <td className="px-3 py-2 border border-gray-100">{i+1}</td>
-                <td className="px-3 py-2 border border-gray-100">{r.lastName} {r.firstName}</td>
-                <td className="px-3 py-2 border border-gray-100">{r.abbrev}</td>
-                <td className="px-3 py-2 border border-gray-100">{r.birthYear}</td>
+            {rows.length > 0 ? (
+              activeTab === "team" ? (
+                (() => {
+                  let idx = 0;
+                  return rows.map((team) => (
+                    <Fragment key={team.institution}>
+                      <tr>
+                        <td
+                          colSpan={currentCols.length}
+                          className="px-3 py-2 font-semibold text-center bg-gray-50 border border-gray-100"
+                        >
+                          {team.institution}
+                        </td>
+                      </tr>
+                      {team.participants.map((p, i) => (
+                        <tr key={p.id}>
+                          <td className="px-3 py-2 border border-gray-100">{++idx}</td>
+                          <td className="px-3 py-2 border border-gray-100">
+                            {p.lastName} {p.firstName}
+                          </td>
+                          <td className="px-3 py-2 border border-gray-100">{p.abbrev}</td>
+                          <td className="px-3 py-2 border border-gray-100">{p.birthYear}</td>
 
-                <td className="px-3 py-2 border border-gray-100">{r.vp3_res  ?? "—"}</td>
-                <td className="px-3 py-2 border border-gray-100">{r.vp3_pts  ?? "—"}</td>
+                          <td className="px-3 py-2 border border-gray-100">{p.vp3_res ?? "—"}</td>
+                          <td className="px-3 py-2 border border-gray-100">{p.vp3_pts ?? "—"}</td>
 
-                <td className="px-3 py-2 border border-gray-100">{r.str_res  ?? "—"}</td>
-                <td className="px-3 py-2 border border-gray-100">{r.str_pts  ?? "—"}</td>
+                          <td className="px-3 py-2 border border-gray-100">{p.str_res ?? "—"}</td>
+                          <td className="px-3 py-2 border border-gray-100">{p.str_pts ?? "—"}</td>
 
-                <td className="px-3 py-2 border border-gray-100">{r.ski_res  ?? "—"}</td>
-                <td className="px-3 py-2 border border-gray-100">{r.ski_pts  ?? "—"}</td>
+                          <td className="px-3 py-2 border border-gray-100">{p.ski_res ?? "—"}</td>
+                          <td className="px-3 py-2 border border-gray-100">{p.ski_pts ?? "—"}</td>
 
-                <td className="px-3 py-2 border border-gray-100">{r.total_points ?? "—"}</td>
+                          <td className="px-3 py-2 border border-gray-100">{p.total_points ?? "—"}</td>
 
-                {activeTab==="team" &&
-                  <td className="px-3 py-2 border border-gray-100">
-                    {r.team_sum3 ?? "—"}
-                  </td>}
+                          <td className="px-3 py-2 border border-gray-100">
+                            {i === 0 ? team.team_sum3 ?? "—" : ""}
+                          </td>
 
-                <td className="px-3 py-2 border border-gray-100">{r.place ?? "—"}</td>
-              </tr>
-            )) : (
+                          <td className="px-3 py-2 border border-gray-100">
+                            {i === 0 ? team.place ?? "—" : ""}
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  ));
+                })()
+              ) : (
+                rows.map((r, i) => (
+                  <tr key={i}>
+                    <td className="px-3 py-2 border border-gray-100">{i + 1}</td>
+                    <td className="px-3 py-2 border border-gray-100">
+                      {r.lastName} {r.firstName}
+                    </td>
+                    <td className="px-3 py-2 border border-gray-100">{r.abbrev}</td>
+                    <td className="px-3 py-2 border border-gray-100">{r.birthYear}</td>
+
+                    <td className="px-3 py-2 border border-gray-100">{r.vp3_res ?? "—"}</td>
+                    <td className="px-3 py-2 border border-gray-100">{r.vp3_pts ?? "—"}</td>
+
+                    <td className="px-3 py-2 border border-gray-100">{r.str_res ?? "—"}</td>
+                    <td className="px-3 py-2 border border-gray-100">{r.str_pts ?? "—"}</td>
+
+                    <td className="px-3 py-2 border border-gray-100">{r.ski_res ?? "—"}</td>
+                    <td className="px-3 py-2 border border-gray-100">{r.ski_pts ?? "—"}</td>
+
+                    <td className="px-3 py-2 border border-gray-100">{r.total_points ?? "—"}</td>
+
+                    {activeTab === "team" && (
+                      <td className="px-3 py-2 border border-gray-100">
+                        {r.team_sum3 ?? "—"}
+                      </td>
+                    )}
+
+                    <td className="px-3 py-2 border border-gray-100">{r.place ?? "—"}</td>
+                  </tr>
+                ))
+              )
+            ) : (
               <tr>
-                <td colSpan={currentCols.length}
-                    className="text-center px-3 py-2 border border-gray-100">
+                <td colSpan={currentCols.length} className="text-center px-3 py-2 border border-gray-100">
                   Нет данных
                 </td>
               </tr>
