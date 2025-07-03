@@ -52,45 +52,61 @@ export async function GET(req) {
     return Response.json({ rows: toPlain(rows) });
   }
 
-  /* ---------- TEAM ---------- */
+/* ---------- TEAM ---------- */
 
-  const members = await prisma.$queryRaw`
-    SELECT  p.id, p."lastName", p."firstName",
-            p.abbrev, p.institution, p.gender, p."isCity",
-            COALESCE(SUM(r.points),0) AS total_points
-    FROM    "Participant" p
-    LEFT JOIN "Result" r ON r."participantId" = p.id
-    WHERE   p."isTeam" = true
-    GROUP BY p.id
-  `;
+const members = await prisma.$queryRaw`
+  SELECT  p.id, p."lastName", p."firstName",
+          p.abbrev, p.institution, p.gender, p."isCity",
+          COALESCE(SUM(r.points),0) AS total_points
+  FROM    "Participant" p
+  LEFT JOIN "Result" r ON r."participantId" = p.id
+  WHERE   p."isTeam" = true
+  GROUP BY p.id
+`;
 
-  const filt = members.filter(m=>{
-    if (scope==="region") return !m.isCity;
-    if (scope==="city")   return  m.isCity;
-    return true;          // all
+/* 1. фильтрация по охвату ------------------------------------------ */
+const filt = members.filter(m => {
+  if (scope === "region") return !m.isCity;
+  if (scope === "city")   return  m.isCity;
+  return true;            // all
+});
+
+/* 2. группируем по учебным заведениям ------------------------------ */
+const buckets = new Map();
+for (const m of filt) {
+  if (!buckets.has(m.institution)) buckets.set(m.institution, []);
+  buckets.get(m.institution).push(m);
+}
+
+/* 3. собираем команды --------------------------------------------- */
+let teams = Array.from(buckets.entries()).map(([inst, list]) => {
+  /* — сортируем участников: больше очков → выше —*/
+  const sorted = [...list].sort((a, b) => {
+    if (a.total_points === b.total_points) return 0;
+    return a.total_points > b.total_points ? -1 : 1;
   });
 
-  const buckets = new Map();
-  for (const m of filt) {
-    if (!buckets.has(m.institution)) buckets.set(m.institution, []);
-    buckets.get(m.institution).push(m);
-  }
+  const top3sum = sorted
+    .slice(0, 3)
+    .reduce((s, x) => s + Number(x.total_points ?? 0n), 0);
 
-  let teams = Array.from(buckets.entries()).map(([inst, list])=>{
-    const sorted  = list.sort((a,b)=>b.total_points-a.total_points);
-    const top3sum = sorted.slice(0,3)
-                          .reduce((s,x)=>s+Number(x.total_points||0),0);
-    return {
-      institution : inst,
-      membersCount: list.length,
-      total_points: top3sum,
-      team_sum3   : top3sum,
-      participants: sorted,
-    };
-  });
+  return {
+    institution  : inst,
+    membersCount : list.length,
+    total_points : top3sum,
+    team_sum3    : top3sum,
+    participants : sorted,
+  };
+});
 
-  teams = teams.sort((a,b)=>b.total_points-a.total_points)
-               .map((t,i)=>({ ...t, place:i+1 }));
+/* 4. сортируем команды -------------------------------------------- */
+teams = teams
+  .sort((a, b) => {
+    if (a.total_points === b.total_points) return 0;
+    return a.total_points > b.total_points ? -1 : 1;
+  })
+  .map((t, i) => ({ ...t, place: i + 1 }));
 
-  return Response.json({ rows: toPlain(teams) });
+return Response.json({ rows: toPlain(teams) });
+
 }
