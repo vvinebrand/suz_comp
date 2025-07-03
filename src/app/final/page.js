@@ -3,6 +3,31 @@
 import { useState, useRef, useEffect, Fragment } from "react";
 import dayjs from "dayjs";
 
+/* ---------- helpers ---------- */
+function mergeTeams(rows = []) {
+  const map = new Map();
+  rows.forEach((team) => {
+    const key = team.institution;
+    const existing = map.get(key);
+    const participants = team.participants || [];
+    if (existing) {
+      existing.participants = [...existing.participants, ...participants];
+      const sum3 = team.team_sum3 ?? -Infinity;
+      const exSum3 = existing.team_sum3 ?? -Infinity;
+      if (sum3 > exSum3) {
+        existing.team_sum3 = team.team_sum3;
+        existing.place = team.place;
+      }
+    } else {
+      map.set(key, {
+        ...team,
+        participants: [...participants],
+      });
+    }
+  });
+  return Array.from(map.values()).filter((t) => (t.participants || []).length > 0);
+}
+
 /* ---------- заголовки без изменений ---------- */
 const initialCols = {
   girls : ["№ п/п","Фамилия, Имя","СУЗ","Год",
@@ -102,7 +127,8 @@ export default function FinalPage() {
       const qs  = new URLSearchParams({ mode:activeTab, gender, scope });
       const res = await fetch(`/api/final?${qs}`);
       const j   = await res.json();
-      setRows(j.rows);
+      const data = activeTab === "team" ? mergeTeams(j.rows) : j.rows;
+      setRows(data);
     }
     fetchRows();
   }, [activeTab, gender, scope]);
